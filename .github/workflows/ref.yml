@@ -54,14 +54,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-      # 如果失败则使用GitHub CLI方案
-      - name: 🚀 备选方案: GitHub CLI创建Release
-        if: ${{ failure() }}  # 仅在上述步骤失败时运行
-        run: |
-          gh release create "release-${{ env.RELEASE_NAME }}" \
-            --title "Release ${{ env.RELEASE_NAME }}" \
-            --notes "自动构建的Quick Reference ${{ env.RELEASE_NAME }}" \
-            public.tar.gz
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
