@@ -16,14 +16,14 @@ jobs:
         with:
           ref: 'main'
           repository: 'jaywcjlove/reference'
-          # 添加 fetch-depth 确保完整历史记录
+          # 使用完整克隆确保所有文件存在
           fetch-depth: 0
 
       - name: 🔧 设置 Node.js 环境
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # 指定确定版本而非 lts/*
-          cache: 'npm'
+          node-version: '18'  # 明确指定版本
+          # 移除缓存配置避免锁文件检查
 
       - name: ♻️ 编译静态文件
         run: |
@@ -34,12 +34,8 @@ jobs:
           echo "REF_LABEL=${{ vars.REF_LABEL || '主页' }}" >> .env
           echo "LICENSE=© $CURRENT_YEAR <a href=\"https://dotcube.cc/\">DotCube</a>" >> .env
           
-          # 生成锁文件（如果不存在）
-          if [ ! -f "package-lock.json" ]; then
-            npm install --package-lock-only
-          fi
-          
-          npm ci
+          # 使用标准安装方式代替ci
+          npm install
           npm run build
 
       - name: 🚀 WebDAV 部署到 storage.dotcube.cc
