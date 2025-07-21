@@ -1,7 +1,10 @@
 name: Quick Reference
 on:
   schedule:
-    - cron: '0 * * * *' # 每小时00分执行
+    - cron: '0 */8 * * *' # 每8小时执行一次（原为每小时）
+  push:
+    branches:
+      - main   # 添加push到main分支时触发
   workflow_dispatch:    # 手动运行
 
 env: # 设置环境变量
@@ -16,14 +19,12 @@ jobs:
         with:
           ref: 'main'
           repository: 'jaywcjlove/reference'
-          # 使用完整克隆确保所有文件存在
           fetch-depth: 0
 
       - name: 🔧 设置 Node.js 环境
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # 明确指定版本
-          # 移除缓存配置避免锁文件检查
+          node-version: '18'
 
       - name: ♻️ 编译静态文件
         run: |
@@ -34,7 +35,7 @@ jobs:
           echo "REF_LABEL=${{ vars.REF_LABEL || '主页' }}" >> .env
           echo "LICENSE=© $CURRENT_YEAR <a href=\"https://dotcube.cc/\">DotCube</a>" >> .env
           
-          # 使用标准安装方式代替ci
+          # 安装依赖并构建
           npm install
           npm run build
 
@@ -46,3 +47,5 @@ jobs:
           password: ${{ secrets.WEBDAV_PASSWORD }}
           local: "./dist"
           remote: "/"
+          method: "copy"  # 改为copy方法减少失败率
+        timeout-minutes: 15  # 增加超时时间
