@@ -1,7 +1,7 @@
-name: Quick Reference
+name: Quick Reference Release
 on:
   schedule:
-    - cron: '0 */8 * * *' # 每8小时执行一次（原为每小时）
+    - cron: '0 */8 * * *' # 每8小时执行一次
   push:
     branches:
       - main   # 添加push到main分支时触发
@@ -11,7 +11,7 @@ env: # 设置环境变量
   TZ: Asia/Shanghai # 时区
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
       - name: 🚜 拉取最新代码
@@ -39,13 +39,21 @@ jobs:
           npm install
           npm run build
 
-      - name: 🚀 WebDAV 部署到 storage.dotcube.cc
-        uses: XPH0816/webdav-deploy-action@v0.3
+      - name: 📦 打包构建结果
+        run: |
+          # 创建时间戳格式: YYYYMMDD-HHMMSS
+          TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+          # 将时间戳保存为输出变量
+          echo "RELEASE_NAME=$TIMESTAMP" >> $GITHUB_ENV
+          
+          # 打包dist目录为public.tar.gz
+          tar -czf public.tar.gz -C ./dist .
+
+      - name: 🚀 创建带时间戳的Release
+        uses: softprops/action-gh-release@v1
         with:
-          url: ${{ secrets.WEBDAV_URL }}
-          username: ${{ secrets.WEBDAV_USERNAME }}
-          password: ${{ secrets.WEBDAV_PASSWORD }}
-          local: "./dist"
-          remote: "/"
-          method: "copy"  # 改为copy方法减少失败率
-        timeout-minutes: 15  # 增加超时时间
+          name: "Release ${{ env.RELEASE_NAME }}"
+          tag_name: "${{ env.RELEASE_NAME }}"
+          files: public.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
