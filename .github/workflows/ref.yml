@@ -13,6 +13,9 @@ env: # 设置环境变量
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
     steps:
       - name: 🚜 拉取最新代码
         uses: actions/checkout@v3
@@ -28,32 +31,37 @@ jobs:
 
       - name: ♻️ 编译静态文件
         run: |
-          # 获取当前年份
           CURRENT_YEAR=$(date +%Y)
-          # 创建.env文件并写入环境变量
           echo "REF_URL=${{ vars.REF_URL || 'http://dotcube.cc/' }}" > .env
           echo "REF_LABEL=${{ vars.REF_LABEL || '主页' }}" >> .env
           echo "LICENSE=© $CURRENT_YEAR <a href=\"https://dotcube.cc/\">DotCube</a>" >> .env
-          
-          # 安装依赖并构建
           npm install
           npm run build
 
       - name: 📦 打包构建结果
         run: |
-          # 创建时间戳格式: YYYYMMDD-HHMMSS
           TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-          # 将时间戳保存为输出变量
           echo "RELEASE_NAME=$TIMESTAMP" >> $GITHUB_ENV
-          
-          # 打包dist目录为public.tar.gz
           tar -czf public.tar.gz -C ./dist .
 
+      # 优先使用软属性方案
       - name: 🚀 创建带时间戳的Release
         uses: softprops/action-gh-release@v1
         with:
           name: "Release ${{ env.RELEASE_NAME }}"
-          tag_name: "${{ env.RELEASE_NAME }}"
+          tag_name: "release-${{ env.RELEASE_NAME }}"
           files: public.tar.gz
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      # 如果失败则使用GitHub CLI方案
+      - name: 🚀 备选方案: GitHub CLI创建Release
+        if: ${{ failure() }}  # 仅在上述步骤失败时运行
+        run: |
+          gh release create "release-${{ env.RELEASE_NAME }}" \
+            --title "Release ${{ env.RELEASE_NAME }}" \
+            --notes "自动构建的Quick Reference ${{ env.RELEASE_NAME }}" \
+            public.tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
