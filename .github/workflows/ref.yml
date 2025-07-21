@@ -35,11 +35,10 @@ jobs:
           npm run build
 
       - name: 🚀 WebDAV 部署到 storage.dotcube.cc
-        uses: bramus/webdav-deploy@v2
+        uses: XPH0816/webdav-deploy-action@v0.3
         with:
-          webdav_host: 'https://storage.dotcube.cc/dav'
-          webdav_username: ${{ secrets.WEBDAV_USERNAME }}
-          webdav_password: ${{ secrets.WEBDAV_PASSWORD }}
-          webdav_target_dir: '/'  # 部署到WebDAV根目录
-          local_dir: './dist'
-          clean: true  # 上传前清除目标目录
+          url: ${{ secrets.WEBDAV_URL }}  # 使用 secrets 中的 URL
+          username: ${{ secrets.WEBDAV_USERNAME }}
+          password: ${{ secrets.WEBDAV_PASSWORD }}
+          local: "./dist"
+          remote: "/"  # 部署到 WebDAV 根目录
