@@ -16,11 +16,13 @@ jobs:
         with:
           ref: 'main'
           repository: 'jaywcjlove/reference'
+          # 添加 fetch-depth 确保完整历史记录
+          fetch-depth: 0
 
-      - name: 🔧 设置 Node.js 环境 (LTS)
+      - name: 🔧 设置 Node.js 环境
         uses: actions/setup-node@v3
         with:
-          node-version: 'lts/*'
+          node-version: '18'  # 指定确定版本而非 lts/*
           cache: 'npm'
 
       - name: ♻️ 编译静态文件
@@ -31,14 +33,20 @@ jobs:
           echo "REF_URL=${{ vars.REF_URL || 'http://dotcube.cc/' }}" > .env
           echo "REF_LABEL=${{ vars.REF_LABEL || '主页' }}" >> .env
           echo "LICENSE=© $CURRENT_YEAR <a href=\"https://dotcube.cc/\">DotCube</a>" >> .env
+          
+          # 生成锁文件（如果不存在）
+          if [ ! -f "package-lock.json" ]; then
+            npm install --package-lock-only
+          fi
+          
           npm ci
           npm run build
 
       - name: 🚀 WebDAV 部署到 storage.dotcube.cc
         uses: XPH0816/webdav-deploy-action@v0.3
         with:
-          url: ${{ secrets.WEBDAV_URL }}  # 使用 secrets 中的 URL
+          url: ${{ secrets.WEBDAV_URL }}
           username: ${{ secrets.WEBDAV_USERNAME }}
           password: ${{ secrets.WEBDAV_PASSWORD }}
           local: "./dist"
-          remote: "/"  # 部署到 WebDAV 根目录
+          remote: "/"
